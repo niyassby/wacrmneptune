@@ -54,6 +54,7 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['pulmonary-wrongdoer-unedited.ngrok-free.dev'],
   /**
    * Cache-Control policy.
    *
