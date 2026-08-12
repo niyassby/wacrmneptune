@@ -386,6 +386,8 @@ export async function sendTemplateMessage(
     language: { code: language },
   }
 
+  
+
   if (template) {
     const components = buildSendComponents(template, {
       // Legacy callers pass body values in `params`; fold them into
@@ -396,8 +398,39 @@ export async function sendTemplateMessage(
       headerMediaId: messageParams?.headerMediaId,
       buttonParams: messageParams?.buttonParams,
     })
-    if (components.length > 0) {
+    
+    if (templatePayload.name === "elevate2") {
+      
+      templatePayload.components = [
+        {
+          "type": "header",
+          "parameters": [
+            { "type": "image", "image": { "link": "https://ohyjuftgjyhosaghvvnv.supabase.co/storage/v1/object/public/flow-media/elevate.jpeg" } }
+          ]
+        },
+        // {
+        //   "type": "body",
+        //   "parameters": [
+        //     { "type": "text", "text": "some value" }
+        //   ]
+        // },
+        {
+          "type": "button",
+          "sub_type": "flow",
+          "index": "0",
+          "parameters": [
+            {
+              "type": "action",
+              "action": {
+                "flow_token": "unused"
+              }
+            }
+          ]
+        }
+      ]
+    }else if(components.length > 0){
       templatePayload.components = components
+
     }
   } else if (params && params.length > 0) {
     // Legacy body-only path — no template row available.
@@ -418,7 +451,12 @@ export async function sendTemplateMessage(
   }
   if (contextMessageId) {
     body.context = { message_id: contextMessageId }
+    
   }
+  // console.log("accessToken");
+  // console.log(accessToken);
+  // console.log("phoneNumberId");
+  // console.log(phoneNumberId);
 
   const response = await fetch(url, {
     method: 'POST',
