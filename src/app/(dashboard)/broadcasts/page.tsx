@@ -17,6 +17,7 @@ import { Radio, Plus, Loader2 } from 'lucide-react';
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { getBroadcastStatus } from '@/lib/broadcast-status';
+import { toast } from 'sonner';
 
 /**
  * Poll cadence while any broadcast is sending. Kept modest so we don't
@@ -80,6 +81,88 @@ export default function BroadcastsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load broadcasts');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function downloadToCsv() {
+    try {
+  
+      const supabase = createClient();
+  
+      const { data, error: fetchError } = await supabase
+        .from("webinar_registrations")
+        .select("*")
+        .order("created_at", { ascending: false });
+  
+      if (fetchError) throw fetchError;
+  
+      if (!data || data.length === 0) {
+        toast.error("No registrations found");
+        return;
+      }
+  
+      // Get CSV headers
+      const headers = Object.keys(data[0]);
+  
+      // Convert data to CSV rows
+      const csvRows = [
+        headers.join(","),
+  
+        ...data.map((row) =>
+          headers
+            .map((header) => {
+              let value = row[header];
+  
+              // Handle null/undefined
+              if (value === null || value === undefined) {
+                return "";
+              }
+  
+              // Convert objects/arrays to JSON
+              if (typeof value === "object") {
+                value = JSON.stringify(value);
+              }
+  
+              // Escape CSV values
+              value = String(value)
+                .replace(/"/g, '""')
+                .replace(/\r?\n/g, " ");
+  
+              return `"${value}"`;
+            })
+            .join(",")
+        ),
+      ];
+  
+      const csvContent = csvRows.join("\n");
+  
+      // Create CSV file
+      const blob = new Blob(
+        ["\uFEFF" + csvContent],
+        {
+          type: "text/csv;charset=utf-8;",
+        }
+      );
+  
+      // Download
+      const url = URL.createObjectURL(blob);
+  
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `webinar-registrations-${new Date()
+        .toISOString()
+        .split("T")[0]}.csv`;
+  
+      document.body.appendChild(link);
+      link.click();
+  
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  
+      toast.success("CSV downloaded successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download CSV");
     }
   }
 
@@ -184,6 +267,7 @@ export default function BroadcastsPage() {
             Send bulk messages to your contacts using approved templates.
           </p>
         </div>
+        <div>
         <GatedButton
           canAct={canCreate}
           gateReason="create broadcasts"
@@ -193,6 +277,15 @@ export default function BroadcastsPage() {
           <Plus className="h-4 w-4" />
           New Broadcast
         </GatedButton>
+            <Button
+              variant="outline"
+              className="ml-2"
+              onClick={() => downloadToCsv()}
+            >
+              <Plus className="h-4 w-4" />
+              Download
+            </Button>
+        </div>
       </div>
 
       {broadcasts.length === 0 ? (
