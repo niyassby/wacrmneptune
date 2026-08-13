@@ -98,7 +98,7 @@ function isRequestSignatureValid(
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
-  const signatureHeader = req.headers.get("x-hub-signature-256");
+  // const signatureHeader = req.headers.get("x-hub-signature-256");
   // if (!isRequestSignatureValid(rawBody, signatureHeader)) {
   //   console.log(rawBody, signatureHeader);
     
